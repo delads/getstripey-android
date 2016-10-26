@@ -1,0 +1,204 @@
+package com.delads.getstripey;
+
+import android.content.Context;
+import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.Color;
+import android.os.AsyncTask;
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.Window;
+import android.view.animation.Animation;
+import android.view.animation.TranslateAnimation;
+import android.widget.Button;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.ImageButton;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.Spinner;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.delads.getstripey.com.delads.getstripey.util.PostObject;
+import com.delads.getstripey.com.delads.getstripey.util.URLFetcher;
+import com.stripe.android.Stripe;
+import com.stripe.android.TokenCallback;
+import com.stripe.android.model.Card;
+import com.stripe.android.model.Token;
+
+import org.json.JSONObject;
+
+import java.io.InputStream;
+import java.lang.reflect.Array;
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.Map;
+
+public class PaymentFormActivity extends AppCompatActivity {
+
+    private String mPrice;
+    private String mProduct_id;
+    private ProgressBar mProgressBar = null;
+    private TextView mErrorMessage = null;
+    private LinearLayout mTopLayout = null;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
+
+        setContentView(R.layout.activity_payment_form);
+
+        Intent intent = getIntent();
+        //Bitmap image = (Bitmap)intent.getParcelableExtra("image");
+
+        mPrice = (String)intent.getStringExtra("price");
+        mProduct_id = (String)intent.getStringExtra("product_id");
+
+        mProgressBar = (ProgressBar)findViewById(R.id.progressBar);
+        mErrorMessage = (TextView)findViewById(R.id.error);
+        mTopLayout = (LinearLayout)findViewById(R.id.top_layout);
+
+        Button getTokenButton = (Button)findViewById(R.id.get_token_button);
+        getTokenButton.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                // Perform action on click
+
+                Context context = v.getContext();
+                //Let's collect all the info from the form
+                EditText numberView = (EditText)findViewById(R.id.number);
+                String cc_number = numberView.getText().toString();
+
+                Spinner expMonthView = (Spinner)findViewById(R.id.expMonth);
+                Integer cc_expMonth = getInteger(expMonthView);
+
+                Spinner expYearView = (Spinner)findViewById(R.id.expYear);
+                Integer cc_expYear = getInteger(expYearView);
+
+                EditText cvcView = (EditText)findViewById(R.id.cvc);
+                String cc_cvc = cvcView.getText().toString();
+
+
+                Card card = new Card(
+                        cc_number,
+                        cc_expMonth,
+                        cc_expYear,
+                        cc_cvc);
+
+                boolean validation = card.validateCard();
+                if (validation) {
+
+                    new Stripe().createToken(
+                            card,
+                            "pk_test_dY29OuyjBRDtRx5sUkmUVCbp",
+                            new TokenCallback() {
+                                public void onSuccess(Token token) {
+                                    //Make a call to getstripey.com
+
+                                    String host = "http://www.getstripey.com/payandroid";
+                                    Map<String, Object> params = new LinkedHashMap<>();
+                                    params.put("product_id", mProduct_id);
+                                    params.put("stripeToken", token.getId());
+
+                                    PostObject post = new PostObject();
+                                    post.setHost(host);
+                                    post.setParams(params);
+
+                                    mProgressBar.setVisibility(View.VISIBLE);
+                                    mTopLayout.setBackgroundColor(Color.LTGRAY);
+                                    mErrorMessage.setVisibility(View.GONE);
+
+                                    Log.println(Log.DEBUG,"PaymentFormActivity", "Let's do this. About to charge the card");
+
+                                    new CreateChargeTask(PaymentFormActivity.this).execute(post);
+
+                                }
+                                public void onError(Exception error) {
+                                    //Handle The errors
+                                    Log.println(Log.ERROR,"PaymentFormActivity", "Failure - Token=" + error.toString());
+                                }
+                            });
+                } else if (!card.validateNumber()) {
+                    Log.println(Log.ERROR,"PaymentFormActivity", "The card number that you entered is invalid");
+                    mErrorMessage.setText("The card number that you entered is invalid");
+                    mErrorMessage.setVisibility(View.VISIBLE);
+
+                } else if (!card.validateExpiryDate()) {
+                    Log.println(Log.ERROR,"PaymentFormActivity", "The expiration date that you entered is invalid");
+                    mErrorMessage.setText("The expiration date that you entered is invalid");
+                    mErrorMessage.setVisibility(View.VISIBLE);
+
+                } else if (!card.validateCVC()) {
+                    Log.println(Log.ERROR,"PaymentFormActivity", "The CVC code that you entered is invalid");
+                    mErrorMessage.setText("The CVC code that you entered is invalid");
+                    mErrorMessage.setVisibility(View.VISIBLE);
+
+                } else {
+                    Log.println(Log.ERROR,"PaymentFormActivity", "The card details that you entered are invalid");
+                    mErrorMessage.setText("The card details that you entered are invalid");
+                    mErrorMessage.setVisibility(View.VISIBLE);
+
+                }
+
+
+            }
+        });
+
+    }
+
+
+
+    private Integer getInteger(Spinner spinner) {
+        try {
+            return Integer.parseInt(spinner.getSelectedItem().toString());
+        } catch (NumberFormatException e) {
+            return 0;
+        }
+    }
+
+    private class CreateChargeTask extends AsyncTask {
+
+        Context mContext;
+
+        public CreateChargeTask(Context context){
+            mContext = context;
+        }
+
+        public Object doInBackground(Object... urls) {
+
+            String response =  URLFetcher.postString((PostObject) urls[0]);
+           return response;
+        }
+
+        public void onPostExecute(Object result) {
+
+            mProgressBar.setVisibility(View.GONE);
+            mTopLayout.setBackgroundColor(Color.WHITE);
+
+            if(result != null) {
+
+                String result_string = (String) result.toString();
+                Log.println(Log.DEBUG,"PaymentFormActivity", "Response from transaction=" + result_string);
+
+                if (result_string.compareTo("\"success\"") == 0) {
+                    Toast.makeText(getApplicationContext(), "Thanks for your purchase!", Toast.LENGTH_LONG).show();
+
+                    Log.println(Log.DEBUG,"PaymentFormActivity", "About to launch new intent");
+                    Intent intent = new Intent(this.mContext, MainActivity.class);
+                    mContext.startActivity(intent);
+
+                    
+                }
+            }
+            else {
+                Toast.makeText(getApplicationContext(), "Unexpected problem. Please try again", Toast.LENGTH_LONG).show();
+                Log.println(Log.ERROR,"PaymentFormActivity", "Shite!!");
+            }
+
+        }
+    }
+}
