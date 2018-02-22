@@ -159,9 +159,6 @@ public class MainActivity extends AppCompatActivity {
                         }
 
 
-
-
-
                     }
 
 
@@ -176,8 +173,6 @@ public class MainActivity extends AppCompatActivity {
 
         }
     }
-
-
 
 
         private class DownloadImageTask extends AsyncTask {
@@ -287,6 +282,6 @@ public class MainActivity extends AppCompatActivity {
         }
         return fileName;
     }
-    
+
 
 }

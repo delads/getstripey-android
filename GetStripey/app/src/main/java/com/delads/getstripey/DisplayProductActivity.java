@@ -21,6 +21,12 @@ import com.loopj.android.http.AsyncHttpClient;
 import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 
+import com.stripe.android.Stripe;
+import com.stripe.android.TokenCallback;
+import com.stripe.android.model.Card;
+import com.stripe.android.model.Token;
+import com.stripe.android.view.CardInputWidget;
+
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.EnumSet;
@@ -98,6 +104,7 @@ public class DisplayProductActivity extends AppCompatActivity {
         }catch(Exception e){}
 
 
+
         ImageButton view = (ImageButton)(findViewById(R.id.imageButton));
         view.setImageBitmap(bitmap);
         view.setTransitionName("image_transition_" + m_product_id);
@@ -119,6 +126,8 @@ public class DisplayProductActivity extends AppCompatActivity {
 
             }
         });
+
+
 
 
 

@@ -23,13 +23,18 @@ import android.widget.Toast;
 
 import com.delads.getstripey.com.delads.getstripey.util.PostObject;
 import com.delads.getstripey.com.delads.getstripey.util.URLFetcher;
+import com.squareup.okhttp.ResponseBody;
+import com.stripe.android.EphemeralKeyProvider;
+import com.stripe.android.EphemeralKeyUpdateListener;
 import com.stripe.android.Stripe;
 import com.stripe.android.TokenCallback;
 import com.stripe.android.model.Card;
 import com.stripe.android.model.Token;
+import com.stripe.android.view.CardInputWidget;
 
 import org.json.JSONObject;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Array;
 import java.net.URL;
@@ -38,13 +43,21 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-public class PaymentFormActivity extends AppCompatActivity {
+import rx.android.schedulers.AndroidSchedulers;
+import rx.functions.Action1;
+import rx.schedulers.Schedulers;
+import rx.subscriptions.CompositeSubscription;
+
+
+public class PaymentFormActivity extends AppCompatActivity{
 
     private String mPrice;
     private String mProduct_id;
     private ProgressBar mProgressBar = null;
     private TextView mErrorMessage = null;
     private LinearLayout mTopLayout = null;
+    private Card mCard = null;
+    private CompositeSubscription mCompositeSubscription;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -63,11 +76,18 @@ public class PaymentFormActivity extends AppCompatActivity {
         mErrorMessage = (TextView)findViewById(R.id.error);
         mTopLayout = (LinearLayout)findViewById(R.id.top_layout);
 
+        mCompositeSubscription = new CompositeSubscription();
+
+
+
+
+
         Button getTokenButton = (Button)findViewById(R.id.get_token_button);
         getTokenButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 // Perform action on click
 
+                /*
                 Context context = v.getContext();
                 //Let's collect all the info from the form
                 EditText numberView = (EditText)findViewById(R.id.number);
@@ -82,19 +102,22 @@ public class PaymentFormActivity extends AppCompatActivity {
                 EditText cvcView = (EditText)findViewById(R.id.cvc);
                 String cc_cvc = cvcView.getText().toString();
 
-
-                Card card = new Card(
+                        Card card = new Card(
                         cc_number,
                         cc_expMonth,
                         cc_expYear,
                         cc_cvc);
+                */
+                //The new Stripe Android drop-in UI equivalent
+                CardInputWidget mCardInputWidget = (CardInputWidget)findViewById(R.id.card_input_widget);
+                mCard = mCardInputWidget.getCard();
 
-                boolean validation = card.validateCard();
-                if (validation) {
+                //boolean validation = card.validateCard();
+                if (mCard != null && mCard.validateCard()) {
 
-                    new Stripe().createToken(
-                            card,
-                            "pk_test_dY29OuyjBRDtRx5sUkmUVCbp",
+                    Stripe stripe = new Stripe(v.getContext(), "pk_test_dY29OuyjBRDtRx5sUkmUVCbp");
+                    stripe.createToken(
+                            mCard,
                             new TokenCallback() {
                                 public void onSuccess(Token token) {
                                     //Make a call to getstripey.com
@@ -122,17 +145,17 @@ public class PaymentFormActivity extends AppCompatActivity {
                                     Log.println(Log.ERROR,"PaymentFormActivity", "Failure - Token=" + error.toString());
                                 }
                             });
-                } else if (!card.validateNumber()) {
+                } else if (mCard != null && !mCard.validateNumber()) {
                     Log.println(Log.ERROR,"PaymentFormActivity", "The card number that you entered is invalid");
                     mErrorMessage.setText("The card number that you entered is invalid");
                     mErrorMessage.setVisibility(View.VISIBLE);
 
-                } else if (!card.validateExpiryDate()) {
+                } else if (mCard != null && !mCard.validateExpiryDate()) {
                     Log.println(Log.ERROR,"PaymentFormActivity", "The expiration date that you entered is invalid");
                     mErrorMessage.setText("The expiration date that you entered is invalid");
                     mErrorMessage.setVisibility(View.VISIBLE);
 
-                } else if (!card.validateCVC()) {
+                } else if (mCard != null && !mCard.validateCVC()) {
                     Log.println(Log.ERROR,"PaymentFormActivity", "The CVC code that you entered is invalid");
                     mErrorMessage.setText("The CVC code that you entered is invalid");
                     mErrorMessage.setVisibility(View.VISIBLE);
@@ -147,6 +170,10 @@ public class PaymentFormActivity extends AppCompatActivity {
 
             }
         });
+
+
+
+
 
     }
 
@@ -193,6 +220,10 @@ public class PaymentFormActivity extends AppCompatActivity {
 
                     
                 }
+                else { //we've got a problem
+                    Toast.makeText(getApplicationContext(), result.toString(), Toast.LENGTH_LONG).show();
+                    Log.println(Log.ERROR,"PaymentFormActivity", "Shite!!");
+                }
             }
             else {
                 Toast.makeText(getApplicationContext(), "Unexpected problem. Please try again", Toast.LENGTH_LONG).show();
@@ -201,4 +232,37 @@ public class PaymentFormActivity extends AppCompatActivity {
 
         }
     }
+
+    /*
+
+    @Override
+    public void createEphemeralKey(String apiVersion, final EphemeralKeyUpdateListener keyUpdateListener) {
+        Map<String, String> apiParamMap = new HashMap<>();
+        apiParamMap.put("api_version", apiVersion);
+
+        mCompositeSubscription.add(
+                mStripeService.createEphemeralKey(apiParamMap)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Action1<ResponseBody>() {
+                            @Override
+                            public void call(ResponseBody response) {
+                                try {
+                                    String rawKey = response.string();
+                                    keyUpdateListener.onKeyUpdate(rawKey);
+                                   // mProgressListener.onStringResponse(rawKey);
+                                } catch (IOException iox) {
+
+                                }
+                            }
+                        }, new Action1<Throwable>() {
+                            @Override
+                            public void call(Throwable throwable) {
+                               // mProgressListener.onStringResponse(throwable.getMessage());
+                            }
+                        }));
+    }
+    */
+
+
 }

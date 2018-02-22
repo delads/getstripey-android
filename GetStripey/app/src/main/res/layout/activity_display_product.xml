@@ -66,7 +66,6 @@
         android:paddingTop="30px"/>
 
 
-
     <Button
         android:text="Buy with Stripe"
         android:textColor="#FFFFFF"
