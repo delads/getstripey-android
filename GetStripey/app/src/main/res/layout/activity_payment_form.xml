@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+    android:background="#FFFFFF"
+    android:id="@+id/top_layout">
+
+    <!--
+        <EditText
+            android:id="@+id/number"
+            style="@style/CardNumber"
+            android:nextFocusDown="@+id/expMonth"
+            android:nextFocusRight="@+id/expMonth"
+            android:nextFocusForward="@+id/expMonth" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Spinner
+                android:id="@+id/expMonth"
+                style="@style/ExpMonth"
+                android:nextFocusForward="@+id/expYear" />
+
+            <Spinner
+                android:id="@+id/expYear"
+                style="@style/ExpYear"
+                android:nextFocusForward="@+id/cvc" />
+
+            <EditText
+                android:id="@+id/cvc"
+                style="@style/CVC"
+                android:nextFocusForward="@+id/currency" />
+
+
+        </LinearLayout>
+
+    -->
+
+    <com.stripe.android.view.CardInputWidget
+        android:id="@+id/card_input_widget"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        />
+
+        <TextView
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceSmall"
+        android:textColor="#FFFFFF"
+        android:background="#d9534f"
+        android:id="@+id/error"
+        android:layout_below="@+id/textViewName"
+        android:layout_centerHorizontal="true"
+        android:padding="15px"
+        android:visibility="invisible"/>
+
+        <Button
+        android:text="Buy Now"
+        android:textColor="#FFFFFF"
+        android:textSize="15sp"
+
+        android:layout_width="200dp"
+        android:layout_height="30dp"
+        android:background="@drawable/buttonshape"
+        android:shadowColor="#A8A8A8"
+        android:shadowDx="0"
+        android:shadowDy="0"
+        android:shadowRadius="5"
+        android:id="@+id/get_token_button"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="51dp"/>
+
+
+    <ProgressBar
+        android:id="@+id/progressBar"
+        style="?android:attr/progressBarStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        android:layout_marginTop="75dp"
+        />
+
+    </LinearLayout>
